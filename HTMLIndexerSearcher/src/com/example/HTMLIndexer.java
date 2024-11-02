@@ -1,4 +1,4 @@
-package com.example;
+package Hw2_IDD.HTMLIndexerSearcher.src.com.example;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;

@@ -1,4 +1,4 @@
-package com.example;
+package Hw2_IDD.HTMLIndexerSearcher.src.com.example;
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -64,10 +64,10 @@ public class HTMLSearcher {
         try {
             String indexPath = "indexDir"; // Percorso dell'indice
             HTMLSearcher searcher = new HTMLSearcher(indexPath);
-            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-            System.out.println("Enter your query (e.g., 'title:term' or 'content:\"phrase query\"'):");
+            BufferedReader br = new BufferedReader(new InputStreamReader(System.in)); //per leggere l'input dell'utente
+            System.out.println("Enter your query (e.g., 'title:term' or 'content:\"phrase query\"'):"); //formato della query
             String line;
-            while (!(line = br.readLine()).equalsIgnoreCase("exit")) {
+            while (!(line = br.readLine()).equalsIgnoreCase("exit")) { //fino a quando l'utente non digita "exit"
                 String[] parts = line.split(":", 2);
                 if (parts.length == 2) {
                     String field = parts[0].trim();
@@ -82,3 +82,5 @@ public class HTMLSearcher {
         }
     }
 }
+
+
