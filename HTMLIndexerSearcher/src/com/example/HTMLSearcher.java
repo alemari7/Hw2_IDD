@@ -40,7 +40,7 @@ public class HTMLSearcher {
         System.out.println("Found " + results.totalHits + " documents.");
     
         // Verifica se ci sono risultati
-        if (results.totalHits.value > 0) {
+        if (results.totalHits.value() > 0) {
             for (ScoreDoc hit : results.scoreDocs) {
                 // Usa il metodo doc() di IndexSearcher per ottenere il documento
                 Document doc = searcher.doc(hit.doc); // Assicurati che searcher sia un'istanza di IndexSearcher
