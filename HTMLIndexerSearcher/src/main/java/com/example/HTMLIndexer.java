@@ -25,6 +25,10 @@ public class HTMLIndexer {
         Directory dir = FSDirectory.open(Paths.get(indexPath));
         Analyzer analyzer = new StandardAnalyzer();
         IndexWriterConfig config = new IndexWriterConfig(analyzer);
+
+        // Imposta l'IndexWriter in modalità CREATE per sovrascrivere l'indice esistente
+        config.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
+
         writer = new IndexWriter(dir, config);
     }
 
@@ -60,7 +64,7 @@ public class HTMLIndexer {
         org.jsoup.nodes.Document htmlDoc = Jsoup.parse(htmlFile, "UTF-8");
         
         String title = htmlDoc.title();
-        Element authorElement = htmlDoc.selectFirst("meta[name=author]");
+        Element authorElement = htmlDoc.selectFirst("meta[name='authors']");
         String author = authorElement != null ? authorElement.attr("content") : "Unknown";
         String content = htmlDoc.text();
         
