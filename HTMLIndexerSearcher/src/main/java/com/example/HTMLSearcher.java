@@ -21,6 +21,8 @@ public class HTMLSearcher {
     private IndexSearcher searcher; // per cercare i documenti nell'indice
     private QueryParser titleParser; // per analizzare le query per il campo "title"
     private QueryParser contentParser; // per analizzare le query per il campo "content"
+    private QueryParser abstractParser; // per analizzare le query per il campo "abstract"
+    private QueryParser authorParser; // per analizzare le query per il campo "author"
 
     public HTMLSearcher(String indexPath) throws IOException {
         Directory dir = FSDirectory.open(Paths.get(indexPath));
@@ -28,15 +30,36 @@ public class HTMLSearcher {
         searcher = new IndexSearcher(reader); // per eseguire le ricerche
         titleParser = new QueryParser("title", new StandardAnalyzer()); // analizzatore per il campo "title"
         contentParser = new QueryParser("content", new StandardAnalyzer());
+        abstractParser = new QueryParser("abstract", new StandardAnalyzer()); // analizzatore per il campo "abstract"
+        authorParser = new QueryParser("author", new StandardAnalyzer()); // analizzatore per il campo "author"
     }
 
     public void search(String field, String queryStr) throws Exception {
         /* accetta due parametri: il campo da cercare e la stringa di query
            seleziona il parser appropriato in base al campo specificato e analizza la query
            esegue la ricerca e stampa i risultati */
-        QueryParser parser = field.equals("title") ? titleParser : contentParser;
+        QueryParser parser;
+        
+        switch (field) {
+            case "title":
+                parser = titleParser;
+                break;
+            case "content":
+                parser = contentParser;
+                break;
+            case "abstract":
+                parser = abstractParser;
+                break;
+            case "author":
+                parser = authorParser;
+                break;
+            default:
+                System.out.println("Invalid field. Valid fields are: title, content, abstract, author.");
+                return;
+        }
+
         Query query = parser.parse(queryStr);
-        TopDocs results = searcher.search(query, 49);
+        TopDocs results = searcher.search(query, 50); // Limitiamo a 50 risultati
         
         // Accesso corretto al totale dei risultati
         System.out.println("Found " + results.totalHits + " documents."); // utilizza .value
@@ -50,6 +73,8 @@ public class HTMLSearcher {
                     System.out.println("Path: " + doc.get("path"));
                     System.out.println("Title: " + doc.get("title"));
                     System.out.println("Author: " + doc.get("author"));
+                    System.out.println("Abstract: " + doc.get("abstract"));
+                    System.out.println("Content: " + doc.get("content"));
                     System.out.println("Score: " + hit.score);
                     System.out.println("------------");
                 } else {
@@ -75,7 +100,7 @@ public class HTMLSearcher {
                     String queryStr = parts[1].trim();
                     searcher.search(field, queryStr);
                 } else {
-                    System.out.println("Invalid query format. Use 'title:term' or 'content:\"phrase query\"'.");
+                    System.out.println("Invalid query format. Use 'title:term', 'content:\"phrase query\"', 'abstract:term', or 'author:term'.");
                 }
             }
         } catch (Exception e) {
