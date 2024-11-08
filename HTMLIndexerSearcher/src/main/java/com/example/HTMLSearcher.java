@@ -5,15 +5,20 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
 
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
@@ -25,66 +30,70 @@ public class HTMLSearcher {
     private QueryParser authorParser; // per analizzare le query per il campo "author"
 
     public HTMLSearcher(String indexPath) throws IOException {
-        Directory dir = FSDirectory.open(Paths.get(indexPath));
-        IndexReader reader = DirectoryReader.open(dir); // creo un IndexReader per leggere l'indice
-        searcher = new IndexSearcher(reader); // per eseguire le ricerche
-        titleParser = new QueryParser("title", new StandardAnalyzer()); // analizzatore per il campo "title"
-        contentParser = new QueryParser("content", new StandardAnalyzer());
-        abstractParser = new QueryParser("abstract", new StandardAnalyzer()); // analizzatore per il campo "abstract"
-        authorParser = new QueryParser("author", new StandardAnalyzer()); // analizzatore per il campo "author"
+    Directory dir = FSDirectory.open(Paths.get(indexPath));
+    IndexReader reader = DirectoryReader.open(dir); // creo un IndexReader per leggere l'indice
+    searcher = new IndexSearcher(reader); // per eseguire le ricerche
+
+    // Creazione degli analizzatori specifici per i campi
+    titleParser = new QueryParser("title", new StandardAnalyzer()); // Analizzatore per il campo "title"
+    contentParser = new QueryParser("content", new EnglishAnalyzer()); // Analizzatore per il campo "content"
+    abstractParser = new QueryParser("abstract", new EnglishAnalyzer()); // Analizzatore per il campo "abstract"
+    authorParser = new QueryParser("author", new KeywordAnalyzer()); // Analizzatore per il campo "author"
+}
+
+
+public void search(String field, String queryStr) throws Exception {
+    // Seleziona il parser appropriato in base al campo specificato
+    Query query = null;
+
+    // Rimuovi eventuali spazi extra e gestisci la ricerca in modo case-insensitive
+    queryStr = queryStr.trim().toLowerCase();
+
+    switch (field) {
+        case "title":
+            query = titleParser.parse(queryStr);
+            break;
+        case "content":
+            query = contentParser.parse(queryStr);
+            break;
+        case "abstract":
+            // Usa QueryParser per l'abstract con analizzatore per l'inglese
+            query = new QueryParser("abstract", new EnglishAnalyzer()).parse(queryStr);
+            break;
+        case "author":
+            // Usa QueryParser per l'autore, ma questa volta senza modificare la stringa in minuscolo
+            // Questo è importante per una ricerca case-insensitive, se necessario
+            query = new WildcardQuery(new Term("author", queryStr + "*"));
+            break;
+        
+        default:
+            System.out.println("Invalid field. Valid fields are: title, content, abstract, author.");
+            return;
     }
 
-    public void search(String field, String queryStr) throws Exception {
-        /* accetta due parametri: il campo da cercare e la stringa di query
-           seleziona il parser appropriato in base al campo specificato e analizza la query
-           esegue la ricerca e stampa i risultati */
-        QueryParser parser;
-        
-        switch (field) {
-            case "title":
-                parser = titleParser;
-                break;
-            case "content":
-                parser = contentParser;
-                break;
-            case "abstract":
-                parser = abstractParser;
-                break;
-            case "author":
-                parser = authorParser;
-                break;
-            default:
-                System.out.println("Invalid field. Valid fields are: title, content, abstract, author.");
-                return;
-        }
+    // Esegui la ricerca
+    TopDocs results = searcher.search(query, 5);
+    System.out.println("Found " + results.totalHits.value() + " documents.");
 
-        Query query = parser.parse(queryStr);
-        TopDocs results = searcher.search(query, 50); // Limitiamo a 50 risultati
-        
-        // Accesso corretto al totale dei risultati
-        System.out.println("Found " + results.totalHits + " documents."); // utilizza .value
-
-        // Verifica se ci sono risultati
-        if (results.totalHits.value() > 0) {
-            for (ScoreDoc hit : results.scoreDocs) {
-                // Usa searcher.doc() per ottenere il documento
-                Document doc = searcher.getIndexReader().storedFields().document(hit.doc);
-                if (doc != null) { // Controlla se il documento è valido
-                    System.out.println("Path: " + doc.get("path"));
-                    System.out.println("Title: " + doc.get("title"));
-                    System.out.println("Author: " + doc.get("author"));
-                    System.out.println("Abstract: " + doc.get("abstract"));
-                    System.out.println("Content: " + doc.get("content"));
-                    System.out.println("Score: " + hit.score);
-                    System.out.println("------------");
-                } else {
-                    System.out.println("Document not found for hit: " + hit.doc);
-                }
+    if (results.totalHits.value() > 0) {
+        for (ScoreDoc hit : results.scoreDocs) {
+            Document doc = searcher.getIndexReader().storedFields().document(hit.doc);
+            if (doc != null) {
+                System.out.println("Path: " + doc.get("path"));
+                System.out.println("Title: " + doc.get("title"));
+                System.out.println("Author: " + doc.get("author"));
+                System.out.println("Abstract: " + doc.get("abstract"));
+                System.out.println("Content: " + doc.get("content"));
+                System.out.println("Score: " + hit.score);
+                System.out.println("------------");
             }
-        } else {
-            System.out.println("No documents found for the query.");
         }
+    } else {
+        System.out.println("No documents found for the query.");
     }
+}
+
+
 
     public static void main(String[] args) {
         try {

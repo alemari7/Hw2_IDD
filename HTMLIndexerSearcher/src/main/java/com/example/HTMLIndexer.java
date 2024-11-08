@@ -64,19 +64,19 @@ public class HTMLIndexer {
         // Metodo che accetta un file HTML e crea un documento Lucene per l'indice
         Document doc = new Document();
         org.jsoup.nodes.Document htmlDoc = Jsoup.parse(htmlFile, "UTF-8"); // Parse del file HTML con Jsoup
-        
+    
         String title = htmlDoc.title();  // Ottiene il titolo del documento HTML
         String author = findAuthor(htmlDoc); // Ottiene l'autore del documento HTML con il metodo `findAuthor`
         String content = htmlDoc.text(); // Ottiene il contenuto testuale del documento
         String abstractText = findAbstract(htmlDoc); // Ottiene l'abstract del documento HTML
-
-        // Aggiunge i campi del documento al documento Lucene
+    
+        // Aggiungi i campi del documento al documento Lucene con analizzatori appropriati
         doc.add(new StringField("path", htmlFile.getPath(), Field.Store.YES));
-        doc.add(new TextField("title", title, Field.Store.YES));
-        doc.add(new TextField("author", author, Field.Store.YES));
-        doc.add(new TextField("content", content, Field.Store.YES));
-        doc.add(new TextField("abstract", abstractText, Field.Store.YES)); // Aggiungi il campo abstract
-        
+        doc.add(new TextField("title", title, Field.Store.YES)); // Usa StandardAnalyzer
+        doc.add(new TextField("content", content, Field.Store.YES)); // Usa EnglishAnalyzer
+        doc.add(new TextField("abstract", abstractText, Field.Store.YES)); // Usa EnglishAnalyzer
+        doc.add(new StringField("author", author, Field.Store.YES)); // Usa KeywordAnalyzer
+    
         writer.addDocument(doc);
     }
 
@@ -85,30 +85,25 @@ public class HTMLIndexer {
         // Prova selettori specifici
         Element authorElement = htmlDoc.selectFirst("meta[name=author]");
         if (authorElement != null && authorElement.hasAttr("content")) {
-            return authorElement.attr("content");
+            return truncateIfNeeded(authorElement.attr("content"));
         }
     
-        // Prova selettori specifici per span.ltx_personname
         authorElement = htmlDoc.selectFirst("span.ltx_personname");
         if (authorElement != null) {
-            // Ottieni solo il testo dell'elemento, evitando figli
-            return authorElement.text().trim();
+            return truncateIfNeeded(authorElement.text().trim());
         }
     
-        // Prova altri selettori per l'autore
-        authorElement = htmlDoc.selectFirst("span.creator, div.author, p.author");
-        if (authorElement != null) {
-            return authorElement.text().trim();
-        }
-    
-        // Fallback per altre parole chiave nei nomi di classe o ID
-        authorElement = htmlDoc.selectFirst("*[class*=author], *[class*=creator], *[id*=author], *[id*=creator]");
-        if (authorElement != null) {
-            return authorElement.text().trim();
-        }
-    
-        return "Unknown"; // Nessun autore trovato
+        // Aggiungi ulteriori selettori, se necessario
+        return "Unknown";
     }
+    
+    private String truncateIfNeeded(String value) {
+        if (value != null && value.length() > 32000) {
+            return value.substring(0, 32000); // Tronca se troppo lungo
+        }
+        return value;
+    }
+    
     
 
     // Metodo per estrarre l'abstract
