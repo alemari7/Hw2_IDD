@@ -1,4 +1,4 @@
-package com.example;
+package util;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -72,10 +72,10 @@ public class HTMLIndexer {
     
         // Aggiungi i campi del documento al documento Lucene con analizzatori appropriati
         doc.add(new StringField("path", htmlFile.getPath(), Field.Store.YES));
-        doc.add(new TextField("title", title, Field.Store.YES)); // Usa StandardAnalyzer
-        doc.add(new TextField("content", content, Field.Store.YES)); // Usa EnglishAnalyzer
-        doc.add(new TextField("abstract", abstractText, Field.Store.YES)); // Usa EnglishAnalyzer
-        doc.add(new StringField("author", author, Field.Store.YES)); // Usa KeywordAnalyzer
+        doc.add(new TextField("title", title, Field.Store.YES)); 
+        doc.add(new TextField("content", content, Field.Store.YES)); 
+        doc.add(new TextField("abstract", abstractText, Field.Store.YES)); 
+        doc.add(new TextField("author", author, Field.Store.YES)); 
     
         writer.addDocument(doc);
     }
