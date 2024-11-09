@@ -76,6 +76,9 @@ public class HTMLIndexer {
         doc.add(new TextField("content", content, Field.Store.YES)); 
         doc.add(new TextField("abstract", abstractText, Field.Store.YES)); 
         doc.add(new TextField("author", author, Field.Store.YES)); 
+        // ... altri campi del documento
+        doc.add(new StringField("relevant", "true", Field.Store.YES));  // Imposta rilevanza se appropriato
+
     
         writer.addDocument(doc);
     }
